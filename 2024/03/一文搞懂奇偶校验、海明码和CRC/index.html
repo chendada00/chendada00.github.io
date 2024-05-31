@@ -1,0 +1,906 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"><title>一文搞懂奇偶校验、海明码和CRC | 伴随的博客</title><meta name="keywords" content="软件设计师,软考"><meta name="author" content="伴随"><meta name="copyright" content="伴随"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#f7f9fe"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-touch-fullscreen" content="yes"><meta name="apple-mobile-web-app-title" content="一文搞懂奇偶校验、海明码和CRC"><meta name="application-name" content="一文搞懂奇偶校验、海明码和CRC"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="#f7f9fe"><meta property="og:type" content="article"><meta property="og:title" content="一文搞懂奇偶校验、海明码和CRC"><meta property="og:url" content="https://cheebo.gitee.io/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C%E3%80%81%E6%B5%B7%E6%98%8E%E7%A0%81%E5%92%8CCRC/index.html"><meta property="og:site_name" content="伴随的博客"><meta property="og:description" content="1. 为什么要有校验码？   因为在数据存取和传送的过程中，由于元器件或者噪音的干扰等原因会出现错误，这个时候我们就需要采取相应的措施，发现并纠正错误，对于错误的检测和校正，大多采取“冗余校验”的思想，即除原数据外，额外增加若干位编码，这些新增的代码称为校验位。  2. 奇偶校验   是一种常用的错"><meta property="og:locale" content="zh-CN"><meta property="og:image" content="https://qn.ctext.top/blog-img/article/2024/03/verify.png"><meta property="article:author" content="伴随"><meta property="article:tag"><meta name="twitter:card" content="summary"><meta name="twitter:image" content="https://qn.ctext.top/blog-img/article/2024/03/verify.png"><meta name="description" content="1. 为什么要有校验码？   因为在数据存取和传送的过程中，由于元器件或者噪音的干扰等原因会出现错误，这个时候我们就需要采取相应的措施，发现并纠正错误，对于错误的检测和校正，大多采取“冗余校验”的思想，即除原数据外，额外增加若干位编码，这些新增的代码称为校验位。  2. 奇偶校验   是一种常用的错"><link rel="shortcut icon" href="/favicon.ico"><link rel="canonical" href="https://cheebo.gitee.io/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C%E3%80%81%E6%B5%B7%E6%98%8E%E7%A0%81%E5%92%8CCRC/"><link rel="preconnect" href="//cdn.cbd.int"/><link rel="preconnect" href="//hm.baidu.com"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><meta name="google-site-verification" content="xxx"/><meta name="baidu-site-verification" content="codeva-n8gn3n8yb7"/><meta name="msvalidate.01" content="xxx"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://cdn.cbd.int/@fancyapps/ui@5.0.28/dist/fancybox/fancybox.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/swiper/swiper.min.css" media="print" onload="this.media='all'"><script>var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?643616874a8f4f5ed38e6146dfd84820";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script><script>const GLOBAL_CONFIG = {
+  linkPageTop: undefined,
+  peoplecanvas: undefined,
+  postHeadAiDescription: {"enable":true,"gptName":null,"mode":"local","switchBtn":false,"btnLink":"https://afdian.net/item/886a79d4db6711eda42a52540025c377","randomNum":3,"basicWordCount":1000,"key":"xxxx","Referer":"https://xx.xx/"},
+  diytitle: {"enable":true,"leaveTitle":"慢慢看~ヾ(•ω•`)o","backTitle":"分享使快乐加倍！(´▽｀)"},
+  LA51: undefined,
+  greetingBox: {"enable":true,"default":"晚上好👋","list":[{"greeting":"晚安啦🌙，做个好梦，期待明天的美好！😴💤","startTime":0,"endTime":6},{"greeting":"早上好🌞，新的一天，愿你充满活力和正能量！💪🌈","startTime":6,"endTime":10},{"greeting":"上午好👋，工作/学习加油，期待你的出色表现！🌟📚","startTime":10,"endTime":12},{"greeting":"午餐时间到🍽️，好好吃饭，下午继续加油！🍛💼","startTime":12,"endTime":14},{"greeting":"下午好👋，午后时光，放松心情，享受片刻宁静。☕️💆‍♀️","startTime":14,"endTime":17},{"greeting":"傍晚好，一天即将结束，为自己点个赞吧！👍🎉","startTime":17,"endTime":19},{"greeting":"晚餐时间啦🍲，享受美食，犒劳一下自己吧！🍽️🥳","startTime":19,"endTime":21},{"greeting":"晚上好🌃，夜晚的时光，放松身心，好好休息吧！🛌💤","startTime":21,"endTime":24}]},
+  twikooEnvId: '',
+  commentBarrageConfig:undefined,
+  root: '/',
+  preloader: {"source":3},
+  friends_vue_info: undefined,
+  navMusic: true,
+  mainTone: {"mode":"api","api":"https://color.ctext.top/api?img=","cover_change":true},
+  authorStatus: {"skills":["🤖️ 数码科技爱好者","🔍 分享与热心帮助","🏠 智能家居小能手","🔨 设计开发一条龙"]},
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简","rightMenuMsgToTraditionalChinese":"转为繁体","rightMenuMsgToSimplifiedChinese":"转为简体"},
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":330},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    simplehomepage: true,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"copy":true,"copyrightEbable":false,"limitCount":50,"languages":{"author":"作者: 伴随","link":"链接: ","source":"来源: 伴随的博客","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。","copySuccess":"复制成功，复制和转载请标注本文地址"}},
+  lightbox: 'fancybox',
+  Snackbar: {"chs_to_cht":"你已切换为繁体","cht_to_chs":"你已切换为简体","day_to_night":"你已切换为深色模式","night_to_day":"你已切换为浅色模式","bgLight":"#425AEF","bgDark":"#1f1f1f","position":"top-center"},
+  source: {
+    justifiedGallery: {
+      js: 'https://cdn.cbd.int/flickr-justified-gallery@2.1.2/dist/fjGallery.min.js',
+      css: 'https://cdn.cbd.int/flickr-justified-gallery@2.1.2/dist/fjGallery.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: true,
+  isAnchor: false,
+  shortcutKey: undefined,
+  autoDarkmode: true
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  configTitle: '伴随的博客',
+  title: '一文搞懂奇偶校验、海明码和CRC',
+  postAI: '',
+  pageFillDescription: '1. 为什么要有校验码？, 2. 奇偶校验, 校验位的计算, 举个栗子🌰, 总结, 2. CRC（循环冗余校验）, 校验位的计算, 举个栗子🌰, 3. 海明校验码, 校验位与数据位的关系, 举个栗子🌰, 栗子2🌰, 最终总结为什么要有校验码因为在数据存取和传送的过程中由于元器件或者噪音的干扰等原因会出现错误这个时候我们就需要采取相应的措施发现并纠正错误对于错误的检测和校正大多采取冗余校验的思想即除原数据外额外增加若干位编码这些新增的代码称为校验位奇偶校验是一种常用的错误检测方法用于校验代码传输的正确性它根据被传输的一组二进制代码的数位中的个数是奇数还是偶数来进行校验如果采用奇数的方式则称为奇校验反之则称为偶校验校验位的计算奇校验如果数据单元中的数量已经是奇数则校验位设置为否则校验位设置为偶校验如果数据单元中的数量已经是偶数则校验位设置为否则校验位设置为举个栗子一个七位数的数据单元奇校验编码偶校验编码红色是校验位可以在数据的前面也可以在数据的后面总结奇偶校验是一种简单且易于实现的错误检测技术虽然它不能解决所有的错误情况但其低成本和实用性使它成为许多通信和存储系统的首选错误检测方法随着技术的发展更复杂的错误检测和纠正算法被开发出来但奇偶校验仍然是计算机科学教育和初级通信系统中的重要组成部分循环冗余校验循环冗余校验是一种根据网络数据包或计算机文件等数据产生简短固定位数校验码的一种信道编码技术主要用来检测或校验数据传输或者保存后可能出现的错误它是利用除法及余数的原理来作错误侦测的校验位的计算首先通过给定的生成多项式来确定除数然后将要进行校验或者编码的数据进行模除法异或取最后的余数然后与数据为拼接即可举个栗子假设要传输的数据为给定的生成多项式为根据题目中的生成多项式可以得出除数为下面开始进行计算计算是首先要进行补零零的个数取决于生成多项式的最高次幂经过上面的计算得出校验码位所以实际发送的数据为当客户端收到这个数据之后要进行校验经过计算得出的余数为所以说明这个数据没有差错这就是整个编码以及检错的过程海明校验码又称汉明码是一种在计算机通讯中用于错误检测和纠正的编码方法它是由理查德海明于年发明的它的核心原理是将数据分割成固定长度的块每个块都用二进制表示并在每个块中添加额外的校验位这些校验位能够检测和纠正一个或多个位的错误校验位与数据位的关系代表数据位代表校验位校验位所在的位置是其余都是数据位举个栗子假设原始数据为位置原始信息位根据上述公式当信息位时校验位最小可以取所以可以得到如下表格位置新的信息位下面开始计算校验位的值十进制对应二进制的数字如下位置二进制码海明码出现的位置对应位置上的值异或结果这里计算的规律是拿举例在第一位对应的二进制编码就是所以我们要根据上面的进制表找到第一位也是的对应的位置有然后在找到这几个位置对应的数据位求异或即可得到对应的海明码其它以此类推通过上面的计算我们就可以得到一个经过编码之后的数据位置最终信息位接收端收到对应的数据之后开始校验数据是否有错误假设传输为继续根据上面的方式重新计算校验位计算的结果为然后拿之前的校验码和新算出来的校验码求异或所以可以判断出是第位出现了错误修改之后就完成了纠错以上就是海明码检错以及纠错的过程如果你认真的看到这里你一定会有一个疑问如果出现两个以上的错误时还能纠错吗下面实践一下栗子假设出现了两个数据位的错误传输为位置最终信息位再次计算校验位为再次与之前的校验码求异或按照这次的计算结果来看是第三位数据出现了问题但是很明显我们出错的是第位但是当你把第三位修改之后再次进行校验发现没有问题了所以通过上面的第二个例子我们可以直到海明码只能检测一位错误当出现两个以上的错误是纠错结果会变得不准确最终总结特点奇偶校验海明码原理在数据中添加一个额外的校验位使整个数据的的个数为奇数奇校验或偶数偶校验用于检测单个比特的错误利用除法操作在发送的数据后面附加一个固定长度的校验码码接收端通过相同的除法操作验证数据的完整性通过在数据中添加冗余位校验位使得整个码字中特定位置的位数的个数具有确定的奇偶性以便检测和纠正错误错误检测能力只能检测单个比特的错误对于两个或更多比特的错误可能无法检测能够检测并纠正多个比特的错误具体取决于码的长度可以检测并纠正单个比特的错误有时还能检测并纠正两个比特的错误错误纠正能力无错误纠正能力根据码的长度和算法设计可以纠正一定数量的错误可以纠正单个比特的错误开销仅需添加一个校验位开销最小需要添加固定长度的码开销适中需要添加多个校验位开销相对较大实现复杂度最简单只需进行简单的位运算中等复杂度需要选择合适的多项式和实现除法操作相对较高需要设计合适的校验位位置和计算校验位的值应用场景常用于简单的数据传输和存储系统对错误检测和纠正要求不高的场合广泛应用于网络通信数据存储等领域用于确保数据的完整性适用于对错误检测和纠正有较高要求的应用如内存错误检测笔记到这里就结束啦你学会了么',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2024-06-01 00:14:06',
+  postMainColor: '#000000',
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#18171d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f7f9fe')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+          const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+          const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+          const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+
+          if (t === undefined) {
+            if (isLightMode) activateLightMode()
+            else if (isDarkMode) activateDarkMode()
+            else if (isNotSpecified || hasNoSupport) {
+              const now = new Date()
+              const hour = now.getHours()
+              const isNight = hour <= 6 || hour >= 18
+              isNight ? activateDarkMode() : activateLightMode()
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addListener(e => {
+              if (saveToLocal.get('theme') === undefined) {
+                e.matches ? activateDarkMode() : activateLightMode()
+              }
+            })
+          } else if (t === 'light') activateLightMode()
+          else activateDarkMode()
+        
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/font.css?1"><link rel="stylesheet" href="/css/welcome.css?1"><link rel="stylesheet" href="/css/imgloaded.css?1"><link rel="stylesheet" href="/css/hideRolling.css?1"><link rel="stylesheet" href="/css/countdown.css?1"><!-- hexo injector head_end start --><link rel="stylesheet" href="https://npm.elemecdn.com/hexo-butterfly-tag-plugins-plus@latest/lib/assets/font-awesome-animation.min.css" media="defer" onload="this.media='all'"><link rel="stylesheet" href="https://npm.elemecdn.com/hexo-butterfly-tag-plugins-plus@latest/lib/tag_plugins.css" media="defer" onload="this.media='all'"><script src="https://npm.elemecdn.com/hexo-butterfly-tag-plugins-plus@latest/lib/assets/carousel-touch.js"></script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.2.0"></head><body data-type="anzhiyu"><div id="web_bg"></div><div id="an_music_bg"></div><div id="loading-box" onclick="document.getElementById(&quot;loading-box&quot;).classList.add(&quot;loaded&quot;)"><div class="loading-bg"><img class="loading-img nolazyload" alt="加载头像" src="/blog-img/avatar.png"/><div class="loading-image-dot"></div></div></div><script>const preloader = {
+  endLoading: () => {
+    document.getElementById('loading-box').classList.add("loaded");
+  },
+  initLoading: () => {
+    document.getElementById('loading-box').classList.remove("loaded")
+  }
+}
+window.addEventListener('load',()=> { preloader.endLoading() })
+setTimeout(function(){preloader.endLoading();},10000)
+
+if (true) {
+  document.addEventListener('pjax:send', () => { preloader.initLoading() })
+  document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+}</script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.10/progress_bar/progress_bar.css"/><script async="async" src="https://cdn.cbd.int/pace-js@1.2.4/pace.min.js" data-pace-options="{ &quot;restartOnRequestAfter&quot;:false,&quot;eventLag&quot;:false}"></script><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><div id="nav-group"><span id="blog_name"><div class="back-home-button"><i class="anzhiyufont anzhiyu-icon-grip-vertical"></i><div class="back-menu-list-groups"><div class="back-menu-list-group"><div class="back-menu-list-title">关于</div><div class="back-menu-list"><a class="back-menu-item" href="/about/" title="我"><img class="back-menu-item-icon" src="/blog-img/avatar.png" alt="我"/><span class="back-menu-item-text">我</span></a></div></div><div class="back-menu-list-group"><div class="back-menu-list-title">博客</div><div class="back-menu-list"><a class="back-menu-item" href="/album/" title="我的相册"><img class="back-menu-item-icon" src="/blog-img/avatar.png" alt="我的相册"/><span class="back-menu-item-text">我的相册</span></a></div></div></div></div><a id="site-name" href="/" accesskey="h"><div class="title">伴随的博客</div><i class="anzhiyufont anzhiyu-icon-house-chimney"></i></a></span><div class="mask-name-container"><div id="name-container"><a id="page-name" href="javascript:anzhiyu.scrollToDest(0, 500)">PAGE_NAME</a></div></div><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/"><i class="anzhiyufont anzhiyu-icon-grip-vertical faa-tada" style="font-size: 0.9em;"></i><span> 主页</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada" style="font-size: 0.9em;"></i><span> 总览</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 我的</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/album/"><i class="anzhiyufont anzhiyu-icon-images faa-tada" style="font-size: 0.9em;"></i><span> 相册集</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/essay/"><i class="anzhiyufont anzhiyu-icon-lightbulb faa-tada" style="font-size: 0.9em;"></i><span> 记录生活</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/air-conditioner/"><i class="anzhiyufont anzhiyu-icon-fan faa-tada" style="font-size: 0.9em;"></i><span> 小空调</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada" style="font-size: 0.9em;"></i><span> 关于自己</span></a></li><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div></div><div id="nav-right"><div class="nav-button" id="randomPost_button"><a class="site-page" onclick="toRandomPost()" title="随机前往一个文章" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-dice"></i></a></div><input id="center-console" type="checkbox"/><label class="widget" for="center-console" title="中控台" onclick="anzhiyu.switchConsole();"><i class="left"></i><i class="widget center"></i><i class="widget right"></i></label><div id="console"><div class="console-card-group-reward"><ul class="reward-all console-card"><li class="reward-item"><a href="/blog-img/pay/wx.png" target="_blank"><img class="post-qr-code-img" alt="微信" src="/blog-img/pay/wx.png"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/blog-img/pay/zfb.png" target="_blank"><img class="post-qr-code-img" alt="支付宝" src="/blog-img/pay/zfb.png"/></a><div class="post-qr-code-desc">支付宝</div></li></ul></div><div class="console-card-group"><div class="console-card-group-left"><div class="console-card" id="card-newest-comments"><div class="card-content"><div class="author-content-item-tips">互动</div><span class="author-content-item-title"> 最新评论</span></div><div class="aside-list"><span>正在加载中...</span></div></div></div><div class="console-card-group-right"><div class="console-card tags"><div class="card-content"><div class="author-content-item-tips">兴趣点</div><span class="author-content-item-title">寻找你感兴趣的领域</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/Waline/" style="font-size: 1.05rem;">Waline<sup>1</sup></a><a href="/tags/hexo/" style="font-size: 1.05rem;">hexo<sup>5</sup></a><a href="/tags/%E4%BA%8C%E8%BF%9B%E5%88%B6/" style="font-size: 1.05rem;">二进制<sup>1</sup></a><a href="/tags/%E5%BE%AE%E4%BF%A1/" style="font-size: 1.05rem;">微信<sup>1</sup></a><a href="/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/" style="font-size: 1.05rem;">排序算法<sup>1</sup></a><a href="/tags/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1%E5%B8%88/" style="font-size: 1.05rem;">软件设计师<sup>5</sup></a><a href="/tags/%E8%BD%AF%E8%80%83/" style="font-size: 1.05rem;">软考<sup>3</sup></a></div></div><hr/></div></div><div class="console-card history"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-box-archiv"></i><span>文章</span></div><div class="card-archives"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-archive"></i><span>归档</span></div><ul class="card-archive-list"><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/05/"><span class="card-archive-list-date">五月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/04/"><span class="card-archive-list-date">四月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">3</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/03/"><span class="card-archive-list-date">三月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">4</span><span>篇</span></div></a></li><li class="card-archive-list-item"><a class="card-archive-list-link" href="/archives/2024/02/"><span class="card-archive-list-date">二月 2024</span><div class="card-archive-list-count-group"><span class="card-archive-list-count">1</span><span>篇</span></div></a></li></ul></div><hr/></div></div></div><div class="button-group"><div class="console-btn-item"><a class="darkmode_switchbutton" title="显示模式切换" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-moon"></i></a></div><div class="console-btn-item" id="consoleHideAside" onclick="anzhiyu.hideAsideBtn()" title="边栏显示控制"><a class="asideSwitch"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></a></div><div class="console-btn-item" id="consoleMusic" onclick="anzhiyu.musicToggle()" title="音乐开关"><a class="music-switch"><i class="anzhiyufont anzhiyu-icon-music"></i></a></div></div><div class="console-mask" onclick="anzhiyu.hideConsole()" href="javascript:void(0);"></div></div><div class="nav-button" id="nav-totop"><a class="totopbtn" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i><span id="percent" onclick="anzhiyu.scrollToDest(0,500)">0</span></a></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);" title="切换"><i class="anzhiyufont anzhiyu-icon-bars"></i></a></div></div></div></nav><div id="post-info"><div id="post-firstinfo"><div class="meta-firstline"><a class="post-meta-original">原创</a><span class="post-meta-categories"><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-inbox post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%BD%AF%E8%80%83%E7%AC%94%E8%AE%B0/" itemprop="url">软考笔记</a></span><span class="article-meta tags"><a class="article-meta__tags" href="/tags/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1%E5%B8%88/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>软件设计师</span></a><a class="article-meta__tags" href="/tags/%E8%BD%AF%E8%80%83/" tabindex="-1" itemprop="url"> <span> <i class="anzhiyufont anzhiyu-icon-hashtag"></i>软考</span></a></span></div></div><h1 class="post-title" itemprop="name headline">一文搞懂奇偶校验、海明码和CRC</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="anzhiyufont anzhiyu-icon-calendar-days post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" itemprop="dateCreated datePublished" datetime="2024-03-27T12:26:34.000Z" title="发表于 2024-03-27 20:26:34">2024-03-27</time><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-history post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" itemprop="dateCreated datePublished" datetime="2024-05-31T16:14:06.890Z" title="更新于 2024-06-01 00:14:06">2024-06-01</time></span></div><div class="meta-secondline"><span class="post-meta-separator"></span><span class="post-meta-wordcount"><i class="anzhiyufont anzhiyu-icon-file-word post-meta-icon" title="文章字数"></i><span class="post-meta-label" title="文章字数">字数总计:</span><span class="word-count" title="文章字数">2.2k</span><span class="post-meta-separator"></span><i class="anzhiyufont anzhiyu-icon-clock post-meta-icon" title="阅读时长"></i><span class="post-meta-label" title="阅读时长">阅读时长:</span><span>7分钟</span></span><span class="post-meta-separator"></span><span class="post-meta-pv-cv" id="" data-flag-title="一文搞懂奇偶校验、海明码和CRC"><i class="anzhiyufont anzhiyu-icon-fw-eye post-meta-icon"></i><span class="post-meta-label" title="阅读量">阅读量:</span><span id="busuanzi_value_page_pv"><i class="anzhiyufont anzhiyu-icon-spinner anzhiyu-spin"></i></span></span><span class="post-meta-separator">       </span><span class="post-meta-position" title="作者IP属地为北京"><i class="anzhiyufont anzhiyu-icon-location-dot"></i>北京</span></div></div></div><section class="main-hero-waves-area waves-area"><svg class="waves-svg" xmlns="http://www.w3.org/2000/svg" xlink="http://www.w3.org/1999/xlink" viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto"><defs><path id="gentle-wave" d="M -160 44 c 30 0 58 -18 88 -18 s 58 18 88 18 s 58 -18 88 -18 s 58 18 88 18 v 44 h -352 Z"></path></defs><g class="parallax"><use href="#gentle-wave" x="48" y="0"></use><use href="#gentle-wave" x="48" y="3"></use><use href="#gentle-wave" x="48" y="5"></use><use href="#gentle-wave" x="48" y="7"></use></g></svg></section><div id="post-top-cover"><img class="nolazyload" id="post-top-bg" src="https://qn.ctext.top/blog-img/article/2024/03/verify.png"></div></header><main id="blog-container"><div class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container" itemscope itemtype="https://cheebo.gitee.io/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C%E3%80%81%E6%B5%B7%E6%98%8E%E7%A0%81%E5%92%8CCRC/"><header><a class="post-meta-categories" href="/categories/%E8%BD%AF%E8%80%83%E7%AC%94%E8%AE%B0/" itemprop="url">软考笔记</a><a href="/tags/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1%E5%B8%88/" tabindex="-1" itemprop="url">软件设计师</a><a href="/tags/%E8%BD%AF%E8%80%83/" tabindex="-1" itemprop="url">软考</a><h1 id="CrawlerTitle" itemprop="name headline">一文搞懂奇偶校验、海明码和CRC</h1><span itemprop="author" itemscope itemtype="http://schema.org/Person">伴随</span><time itemprop="dateCreated datePublished" datetime="2024-03-27T12:26:34.000Z" title="发表于 2024-03-27 20:26:34">2024-03-27</time><time itemprop="dateCreated datePublished" datetime="2024-05-31T16:14:06.890Z" title="更新于 2024-06-01 00:14:06">2024-06-01</time></header><h1>1. 为什么要有校验码？</h1>
+<div class="note default no-icon flat"><p>  因为在数据存取和传送的过程中，由于元器件或者噪音的干扰等原因会出现错误，这个时候我们就需要采取相应的措施，发现并纠正错误，对于错误的检测和校正，大多采取“冗余校验”的思想，即除原数据外，额外增加若干位编码，这些新增的代码称为校验位。</p>
+</div>
+<h1>2. 奇偶校验</h1>
+<div class="note info no-icon flat"><p>  是一种常用的错误检测方法，用于校验代码传输的正确性。它根据被传输的一组二进制代码的数位中“1”的个数是奇数还是偶数来进行校验。如果采用奇数的方式，则称为奇校验；反之，则称为偶校验。</p>
+</div>
+<h2 id="校验位的计算"><a class="header-anchor" href="#校验位的计算">¶</a>校验位的计算</h2>
+<ul>
+<li>
+<mark class="hl-label orange">奇校验</mark> ：如果数据单元中1的数量已经是奇数，则校验位设置为0；否则，校验位设置为1。 
+</li>
+<li>
+<mark class="hl-label pink">偶校验</mark> ：如果数据单元中1的数量已经是偶数，则校验位设置为0；否则，校验位设置为1。
+</li>
+</ul>
+<h2 id="举个栗子🌰"><a class="header-anchor" href="#举个栗子🌰">¶</a>举个栗子🌰</h2>
+<p>一个七位数的数据单元1011011</p>
+<ul>
+<li>奇校验编码：<span class='p red'>0</span>1011011</li>
+<li>偶校验编码：<span class='p red'>1</span>1011011</li>
+</ul>
+<div class="note warning no-icon flat"><p>红色是校验位，可以在数据的前面也可以在数据的后面</p>
+</div>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<div class="note info no-icon flat"><p>  奇偶校验是一种简单且易于实现的错误检测技术。虽然它不能解决所有的错误情况，但其低成本和实用性使它成为许多通信和存储系统的首选错误检测方法。随着技术的发展，更复杂的错误检测和纠正算法被开发出来，但奇偶校验仍然是计算机科学教育和初级通信系统中的重要组成部分。</p>
+</div>
+<h1>2. CRC（循环冗余校验）</h1>
+<div class="note default no-icon flat"><p>  循环冗余校验（Cyclic Redundancy Check， CRC）是一种根据网络数据包或计算机文件等数据产生简短固定位数校验码的一种信道编码技术，主要用来检测或校验数据传输或者保存后可能出现的错误。它是利用除法及余数的原理来作错误侦测的。</p>
+</div>
+<h2 id="校验位的计算-v2"><a class="header-anchor" href="#校验位的计算-v2">¶</a>校验位的计算</h2>
+<ul>
+<li>首先通过给定的生成多项式来确定除数，然后将要进行校验或者编码的数据进行模2除法（异或），取最后的余数然后与数据为拼接即可</li>
+</ul>
+<h2 id="举个栗子🌰-v2"><a class="header-anchor" href="#举个栗子🌰-v2">¶</a>举个栗子🌰</h2>
+<p>假设要传输的数据为1101011011，给定的生成多项式为G(X)=x<sup>4</sup>+x+1</p>
+<p>根据题目中的生成多项式可以得出除数为10011，下面开始进行计算：</p>
+<div class="note danger no-icon flat"><p>计算是首先要进行补零，零的个数取决于生成多项式的最高次幂</p>
+</div>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">            1100001010</span><br><span class="line">      _______________</span><br><span class="line">10011 ) 11010110110000</span><br><span class="line">        10011.........</span><br><span class="line">         1001110110000</span><br><span class="line">         10011........</span><br><span class="line">              10110000</span><br><span class="line">              10011...</span><br><span class="line">                101000</span><br><span class="line">                10011.</span><br><span class="line">                  1110</span><br></pre></td></tr></table></figure>
+<p>经过上面的计算得出校验码位1110，所以实际发送的数据为11010110111110</p>
+<p>当客户端收到这个数据之后，要进行CRC校验</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">            110000101</span><br><span class="line">      _________________</span><br><span class="line">10011 ) 11010110111110</span><br><span class="line">        10011.........</span><br><span class="line">         1001110111110</span><br><span class="line">         10011........</span><br><span class="line">              10111110</span><br><span class="line">              10011...</span><br><span class="line">                100110</span><br><span class="line">                10011.</span><br><span class="line">                     0</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<div class="note success no-icon flat"><p>经过计算，得出的余数为0，所以说明这个数据没有差错，这就是CRC整个编码以及检错的过程</p>
+</div>
+<h1>3. 海明校验码</h1>
+<div class="note default no-icon flat"><p>  又称汉明码，是一种在计算机通讯中用于错误检测和纠正的编码方法。它是由理查德·海明于1950年发明的。它的核心原理是将数据分割成固定长度的块，每个块都用二进制表示，并在每个块中添加额外的校验位。这些校验位能够检测和纠正一个或多个位的错误。</p>
+</div>
+<h2 id="校验位与数据位的关系"><a class="header-anchor" href="#校验位与数据位的关系">¶</a>校验位与数据位的关系</h2>
+<ul>
+<li>2<sup>k</sup>−1&gt;=m+k</li>
+</ul>
+<div class="note info no-icon flat"><p>m代表数据位，k代表校验位，校验位所在的位置是2<sup>n</sup>，其余都是数据位</p>
+</div>
+<h2 id="举个栗子🌰-v3"><a class="header-anchor" href="#举个栗子🌰-v3">¶</a>举个栗子🌰</h2>
+<p>假设原始数据为01101110</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">位置</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">原始信息位</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+</tbody>
+</table>
+<p>根据上述公式，当 m（信息位）=8时，k（校验位）最小可以取 4 ，所以可以得到如下表格：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">位置</th>
+<th style="text-align:center">12</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">新的信息位</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">H8</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">H4</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">H2</td>
+<td style="text-align:center">H1</td>
+</tr>
+</tbody>
+</table>
+<p>下面开始计算校验位的值</p>
+<p>十进制对应二进制的数字如下</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">位置</th>
+<th style="text-align:center">二进制码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0001</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td style="text-align:center">0010</td>
+</tr>
+<tr>
+<td style="text-align:center">3</td>
+<td style="text-align:center">0011</td>
+</tr>
+<tr>
+<td style="text-align:center">4</td>
+<td style="text-align:center">0100</td>
+</tr>
+<tr>
+<td style="text-align:center">5</td>
+<td style="text-align:center">0101</td>
+</tr>
+<tr>
+<td style="text-align:center">6</td>
+<td style="text-align:center">0110</td>
+</tr>
+<tr>
+<td style="text-align:center">7</td>
+<td style="text-align:center">0111</td>
+</tr>
+<tr>
+<td style="text-align:center">8</td>
+<td style="text-align:center">1000</td>
+</tr>
+<tr>
+<td style="text-align:center">9</td>
+<td style="text-align:center">1001</td>
+</tr>
+<tr>
+<td style="text-align:center">10</td>
+<td style="text-align:center">1010</td>
+</tr>
+<tr>
+<td style="text-align:center">11</td>
+<td style="text-align:center">1011</td>
+</tr>
+<tr>
+<td style="text-align:center">12</td>
+<td style="text-align:center">1100</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">海明码</th>
+<th style="text-align:center">出现的位置</th>
+<th style="text-align:center">对应位置上的值异或</th>
+<th style="text-align:center">结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">H1</td>
+<td style="text-align:center">3，5，7，9，11</td>
+<td style="text-align:center">0⊕1⊕1⊕0⊕1</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">H2</td>
+<td style="text-align:center">3，6，7，10，11</td>
+<td style="text-align:center">0⊕1⊕1⊕1⊕1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">H4</td>
+<td style="text-align:center">5，6，7，12</td>
+<td style="text-align:center">1⊕1⊕1⊕0</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">H8</td>
+<td style="text-align:center">9，10，11，12</td>
+<td style="text-align:center">0⊕1⊕1⊕0</td>
+<td style="text-align:center">0</td>
+</tr>
+</tbody>
+</table>
+<div class="note primary no-icon flat"><p>这里计算的规律是，拿H1举例，H1在第一位，对应的二进制编码就是 1，所以我们要根据上面的进制表，找到第一位也是 1 的对应的位置，有 3,5,7,9,11，然后在找到这几个位置对应的数据位求异或，即可得到H1对应的海明码，其它以此类推……</p>
+</div>
+<p>通过上面的计算，我们就可以得到一个经过编码之后的数据：0110 0111 1001</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">位置</th>
+<th style="text-align:center">12</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">最终信息位</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+</tbody>
+</table>
+<p>接收端收到对应的数据之后，开始校验数据是否有错误</p>
+<p>假设 0110 0111 1001 -&gt;传输为 011<span class='p red'>1</span> 0111 1001</p>
+<p>继续根据上面的方式，重新计算H1，H2，H4，H8校验位，计算的结果为<span class='p cyan'>1100</span></p>
+<p>然后拿之前的校验码和新算出来的校验码求异或0101 ⊕ <span class='p cyan'>1100</span> = 1001 = 9，所以可以判断出是第9位出现了错误，修改之后就完成了纠错</p>
+<div class="note success no-icon flat"><p>以上就是海明码检错以及纠错的过程</p>
+</div>
+<hr>
+<div class="note warning flat"><p>如果你认真的看到这里，你一定会有一个疑问，如果出现两个以上的错误时，还能纠错吗？下面实践一下</p>
+</div>
+<h2 id="栗子2🌰"><a class="header-anchor" href="#栗子2🌰">¶</a>栗子2🌰</h2>
+<p>假设出现了两个数据位的错误 0110 0111 1001 -&gt;传输为 01<span class='p red'>01</span> 0111 1001</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">位置</th>
+<th style="text-align:center">12</th>
+<th style="text-align:center">11</th>
+<th style="text-align:center">10</th>
+<th style="text-align:center">9</th>
+<th style="text-align:center">8</th>
+<th style="text-align:center">7</th>
+<th style="text-align:center">6</th>
+<th style="text-align:center">5</th>
+<th style="text-align:center">4</th>
+<th style="text-align:center">3</th>
+<th style="text-align:center">2</th>
+<th style="text-align:center">1</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">最终信息位</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><span class='p red'>0</span></td>
+<td style="text-align:center"><span class='p red'>1</span></td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+</tbody>
+</table>
+<p>再次计算校验位H1，H2，H4，H8为<span class='p cyan'>0110</span><br>
+再次与之前的校验码求异或 0101 ⊕ <span class='p cyan'>0110</span> = 0011 = 3<br>
+按照这次的计算结果来看，是第三位数据出现了问题，但是很明显我们出错的是第9,10位，但是，当你把第三位修改之后，再次进行校验，发现没有问题了😗</p>
+<div class="note danger no-icon flat"><p>所以通过上面的第二个例子我们可以直到，海明码只能检测一位错误，当出现两个以上的错误是，纠错结果会变得不准确</p>
+</div>
+<h1>最终总结</h1>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特点</th>
+<th style="text-align:left">奇偶校验</th>
+<th style="text-align:left">CRC</th>
+<th style="text-align:left">海明码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">原理</td>
+<td style="text-align:left">在数据中添加一个额外的校验位，使整个数据的1的个数为奇数（奇校验）或偶数（偶校验），用于检测单个比特的错误。</td>
+<td style="text-align:left">利用除法操作，在发送的数据后面附加一个固定长度的校验码（CRC码），接收端通过相同的除法操作验证数据的完整性。</td>
+<td style="text-align:left">通过在数据中添加冗余位（校验位），使得整个码字中特定位置的位数（1的个数）具有确定的奇偶性，以便检测和纠正错误。</td>
+</tr>
+<tr>
+<td style="text-align:left">错误检测能力</td>
+<td style="text-align:left">只能检测单个比特的错误，对于两个或更多比特的错误可能无法检测。</td>
+<td style="text-align:left">能够检测并纠正多个比特的错误，具体取决于CRC码的长度。</td>
+<td style="text-align:left">可以检测并纠正单个比特的错误，有时还能检测并纠正两个比特的错误。</td>
+</tr>
+<tr>
+<td style="text-align:left">错误纠正能力</td>
+<td style="text-align:left">无错误纠正能力。</td>
+<td style="text-align:left">根据CRC码的长度和算法设计，可以纠正一定数量的错误。</td>
+<td style="text-align:left">可以纠正单个比特的错误。</td>
+</tr>
+<tr>
+<td style="text-align:left">开销</td>
+<td style="text-align:left">仅需添加一个校验位，开销最小。</td>
+<td style="text-align:left">需要添加固定长度的CRC码，开销适中。</td>
+<td style="text-align:left">需要添加多个校验位，开销相对较大。</td>
+</tr>
+<tr>
+<td style="text-align:left">实现复杂度</td>
+<td style="text-align:left">最简单，只需进行简单的位运算。</td>
+<td style="text-align:left">中等复杂度，需要选择合适的CRC多项式和实现除法操作。</td>
+<td style="text-align:left">相对较高，需要设计合适的校验位位置和计算校验位的值。</td>
+</tr>
+<tr>
+<td style="text-align:left">应用场景</td>
+<td style="text-align:left">常用于简单的数据传输和存储系统，对错误检测和纠正要求不高的场合。</td>
+<td style="text-align:left">广泛应用于网络通信、数据存储等领域，用于确保数据的完整性。</td>
+<td style="text-align:left">适用于对错误检测和纠正有较高要求的应用，如内存错误检测。</td>
+</tr>
+</tbody>
+</table>
+<div class="note purple icon-padding disabled"><i class="note-icon far fa-hand-scissors"></i><p>笔记到这里就结束啦，你学会了么😮</p>
+</div></article><div class="post-copyright"><div class="copyright-cc-box"><i class="anzhiyufont anzhiyu-icon-copyright"></i></div><div class="post-copyright__author_box"><a class="post-copyright__author_img" href="/" title="头像"><img class="post-copyright__author_img_back" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/avatar.png" title="头像" alt="头像"><img class="post-copyright__author_img_front" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/avatar.png" title="头像" alt="头像"></a><div class="post-copyright__author_name">伴随</div><div class="post-copyright__author_desc">请保持那份热爱 奔赴下一场山海</div></div><div class="post-copyright__post__info"><a class="post-copyright__original" title="该文章为原创文章，注意版权协议" href="https://cheebo.gitee.io/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C%E3%80%81%E6%B5%B7%E6%98%8E%E7%A0%81%E5%92%8CCRC/">原创</a><a class="post-copyright-title"><span onclick="rm.copyPageUrl('https://cheebo.gitee.io/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C%E3%80%81%E6%B5%B7%E6%98%8E%E7%A0%81%E5%92%8CCRC/')">一文搞懂奇偶校验、海明码和CRC</span></a></div><div class="post-tools" id="post-tools"><div class="post-tools-left"><div class="rewardLeftButton"><div class="post-reward" onclick="anzhiyu.addRewardMask()"><div class="reward-button button--animated" title="赞赏作者"><i class="anzhiyufont anzhiyu-icon-hand-heart-fill"></i>打赏作者</div><div class="reward-main"><div class="reward-all"><span class="reward-title">感谢你赐予我前进的力量</span><ul class="reward-group"><li class="reward-item"><a href="/blog-img/pay/wx.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/pay/wx.png" alt="微信"/></a><div class="post-qr-code-desc">微信</div></li><li class="reward-item"><a href="/blog-img/pay/zfb.png" target="_blank"><img class="post-qr-code-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/pay/zfb.png" alt="支付宝"/></a><div class="post-qr-code-desc">支付宝</div></li></ul><a class="reward-main-btn" href="/about/#about-reward" target="_blank"><div class="reward-text">赞赏者名单</div><div class="reward-dec">因为你们的支持让我意识到写文章的价值🙏</div></a></div></div></div><div id="quit-box" onclick="anzhiyu.removeRewardMask()" style="display: none"></div></div><div class="shareRight"><div class="share-link mobile"><div class="share-qrcode"><div class="share-button" title="使用手机访问这篇文章"><i class="anzhiyufont anzhiyu-icon-qrcode"></i></div><div class="share-main"><div class="share-main-all"><div id="qrcode" title="https://cheebo.gitee.io/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C%E3%80%81%E6%B5%B7%E6%98%8E%E7%A0%81%E5%92%8CCRC/"></div><div class="reward-dec">使用手机访问这篇文章</div></div></div></div></div><div class="share-link weibo"><a class="share-button" target="_blank" href="https://service.weibo.com/share/share.php?title=一文搞懂奇偶校验、海明码和CRC&amp;url=https://cheebo.gitee.io/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%A5%87%E5%81%B6%E6%A0%A1%E9%AA%8C%E3%80%81%E6%B5%B7%E6%98%8E%E7%A0%81%E5%92%8CCRC/&amp;pic=https://qn.ctext.top/blog-img/article/2024/03/verify.png" rel="external nofollow noreferrer noopener"><i class="anzhiyufont anzhiyu-icon-weibo"></i></a></div><script>function copyCurrentPageUrl() {
+  var currentPageUrl = window.location.href;
+  var input = document.createElement("input");
+  input.setAttribute("value", currentPageUrl);
+  document.body.appendChild(input);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  document.execCommand("copy");
+  document.body.removeChild(input);
+}</script><div class="share-link copyurl"><div class="share-button" id="post-share-url" title="复制链接" onclick="copyCurrentPageUrl()"><i class="anzhiyufont anzhiyu-icon-link"></i></div></div></div></div></div><div class="post-copyright__notice"><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://cheebo.gitee.io" target="_blank">伴随的博客</a>！</span></div></div><div class="post-tools-right"><div class="tag_share"><div class="post-meta__box"><div class="post-meta__box__tag-list"><a class="post-meta__box__tags" href="/tags/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1%E5%B8%88/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>软件设计师<span class="tagsPageCount">5</span></a><a class="post-meta__box__tags" href="/tags/%E8%BD%AF%E8%80%83/"><span class="tags-punctuation"> <i class="anzhiyufont anzhiyu-icon-tag"></i></span>软考<span class="tagsPageCount">3</span></a></div></div></div><div class="post_share"><div class="social-share" data-image="https://qn.ctext.top/blog-img/article/2024/05/encrypt.png" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.cbd.int/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"/><script src="https://cdn.cbd.int/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer="defer"></script></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%8E%9F%E7%A0%81%E3%80%81%E5%8F%8D%E7%A0%81%E3%80%81%E8%A1%A5%E7%A0%81%E3%80%81%E7%A7%BB%E7%A0%81/"><img class="prev-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/03/number.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">一文搞懂原码、反码、补码、移码</div></div></a></div><div class="next-post pull-right"><a href="/2024/04/%E8%87%AA%E5%8A%A8%E6%9B%BF%E6%8D%A2%E5%89%8D%E7%AB%AFnode-modules%E6%BA%90%E7%A0%81/"><img class="next-cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/04/replace.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">自动替换前端node_modules源码</div></div></a></div></nav><div class="relatedPosts"><div class="headline"><i class="anzhiyufont anzhiyu-icon-thumbs-up fa-fw" style="font-size: 1.5rem; margin-right: 4px"></i><span>喜欢这篇文章的人也看了</span></div><div class="relatedPosts-list"><div><a href="/2024/04/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3/" title="排序算法详解"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/04/sort.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2024-04-06</div><div class="title">排序算法详解</div></div></a></div><div><a href="/2024/04/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E6%B3%A2%E5%85%B0%E8%A1%A8%E8%BE%BE%E5%BC%8F/" title="一文搞懂波兰表达式"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/04/bolan.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2024-04-05</div><div class="title">一文搞懂波兰表达式</div></div></a></div><div><a href="/2024/02/%E3%80%8A%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1%E5%B8%88%E3%80%8B%E8%80%83%E7%82%B9%E6%80%BB%E7%BB%93/" title="《软件设计师》考点总结"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/02/software.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2024-02-26</div><div class="title">《软件设计师》考点总结</div></div></a></div><div><a href="/2024/03/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E5%8E%9F%E7%A0%81%E3%80%81%E5%8F%8D%E7%A0%81%E3%80%81%E8%A1%A5%E7%A0%81%E3%80%81%E7%A7%BB%E7%A0%81/" title="一文搞懂原码、反码、补码、移码"><img class="cover" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/03/number.png" alt="cover"><div class="content is-center"><div class="date"><i class="anzhiyufont anzhiyu-icon-calendar-days fa-fw"></i> 2024-03-23</div><div class="title">一文搞懂原码、反码、补码、移码</div></div></a></div></div></div><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="anzhiyufont anzhiyu-icon-comments"></i><span> 评论</span></div><div class="comment-randomInfo"><a onclick="anzhiyu.addRandomCommentInfo()" href="javascript:void(0)" style="display: none">匿名评论</a><a href="/privacy" style="margin-left: 4px">隐私政策</a></div></div><div class="comment-wrap"><div><div id="waline-wrap"></div></div></div></div><div class="comment-barrage"></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="card-content"><div class="author-info__sayhi" id="author-info__sayhi" onclick="anzhiyu.changeSayHelloText()"></div><div class="author-info-avatar"><img class="avatar-img" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/avatar.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-status"><img class="g-status" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://bu.dusays.com/2023/08/24/64e6ce9c507bb.png" alt="status"/></div></div><div class="author-info__description"><div style="line-height:1.38;margin:0.6rem 0;text-align:center;color:rgba(255, 255, 255, 0.8);"> <b style="color:#fff">我想，左肩有你，右肩微笑</b> </div> <div style="line-height:1.38;margin:0.6rem 0;text-align:center;color:rgba(255, 255, 255, 0.8);"> <b style="color:#fff">我想，在你眼里，撒野奔跑</b> </div> <div style="line-height:1.38;margin:0.6rem 0;text-align:center;color:rgba(255, 255, 255, 0.8);"> <b style="color:#fff">我想，一个眼神，就到老&emsp;</b> </div> <div style="line-height:1.38;margin:0.6rem 0;text-align:center;color:rgba(255, 255, 255, 0.8);"> <b style="color:#fff">我想………&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&nbsp;</b> </div></div><div class="author-info__bottom-group"><a class="author-info__bottom-group-left" href="/"><h1 class="author-info__name">伴随</h1><div class="author-info__desc">请保持那份热爱 奔赴下一场山海</div></a><div class="card-info-social-icons is-center"><a class="social-icon faa-parent animated-hover" href="https://qm.qq.com/q/ySiUkBIWTm" target="_blank" title="QQ"><i class="anzhiyufont anzhiyu-icon-qq"></i></a></div></div></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bullhorn anzhiyu-shake"></i><span>公告</span></div><div class="announcement_content"><div id="welcome-info"></div></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-bars"></i><span>文章目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">1.</span> <span class="toc-text">1. 为什么要有校验码？</span></a></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">2.</span> <span class="toc-text">2. 奇偶校验</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%A1%E9%AA%8C%E4%BD%8D%E7%9A%84%E8%AE%A1%E7%AE%97"><span class="toc-number">2.1.</span> <span class="toc-text">校验位的计算</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BE%E4%B8%AA%E6%A0%97%E5%AD%90%F0%9F%8C%B0"><span class="toc-number">2.2.</span> <span class="toc-text">举个栗子🌰</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">2.3.</span> <span class="toc-text">总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">3.</span> <span class="toc-text">2. CRC（循环冗余校验）</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%A1%E9%AA%8C%E4%BD%8D%E7%9A%84%E8%AE%A1%E7%AE%97-v2"><span class="toc-number">3.1.</span> <span class="toc-text">校验位的计算</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BE%E4%B8%AA%E6%A0%97%E5%AD%90%F0%9F%8C%B0-v2"><span class="toc-number">3.2.</span> <span class="toc-text">举个栗子🌰</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">4.</span> <span class="toc-text">3. 海明校验码</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%A1%E9%AA%8C%E4%BD%8D%E4%B8%8E%E6%95%B0%E6%8D%AE%E4%BD%8D%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="toc-number">4.1.</span> <span class="toc-text">校验位与数据位的关系</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BE%E4%B8%AA%E6%A0%97%E5%AD%90%F0%9F%8C%B0-v3"><span class="toc-number">4.2.</span> <span class="toc-text">举个栗子🌰</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%97%E5%AD%902%F0%9F%8C%B0"><span class="toc-number">4.3.</span> <span class="toc-text">栗子2🌰</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link"><span class="toc-number">5.</span> <span class="toc-text">最终总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="anzhiyufont anzhiyu-icon-history"></i><span>最近发布</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2024/05/encrypt/" title="hexo配置文章加密"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/05/encrypt.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="hexo配置文章加密"/></a><div class="content"><a class="title" href="/2024/05/encrypt/" title="hexo配置文章加密">hexo配置文章加密</a><time datetime="2024-05-31T14:35:36.000Z" title="发表于 2024-05-31 22:35:36">2024-05-31</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/05/tag-plugins/" title="tag-plugins外挂标签文档"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/05/tag.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="tag-plugins外挂标签文档"/></a><div class="content"><a class="title" href="/2024/05/tag-plugins/" title="tag-plugins外挂标签文档">tag-plugins外挂标签文档</a><time datetime="2024-05-30T02:38:47.000Z" title="发表于 2024-05-30 10:38:47">2024-05-30</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/05/hexo%E9%85%8D%E7%BD%AE%E9%9A%90%E8%97%8F%E6%96%87%E7%AB%A0/" title="hexo配置隐藏文章"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/05/hidn.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="hexo配置隐藏文章"/></a><div class="content"><a class="title" href="/2024/05/hexo%E9%85%8D%E7%BD%AE%E9%9A%90%E8%97%8F%E6%96%87%E7%AB%A0/" title="hexo配置隐藏文章">hexo配置隐藏文章</a><time datetime="2024-05-29T12:23:07.000Z" title="发表于 2024-05-29 20:23:07">2024-05-29</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/04/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3/" title="排序算法详解"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/04/sort.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="排序算法详解"/></a><div class="content"><a class="title" href="/2024/04/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E8%AF%A6%E8%A7%A3/" title="排序算法详解">排序算法详解</a><time datetime="2024-04-06T10:07:20.000Z" title="发表于 2024-04-06 18:07:20">2024-04-06</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/04/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E6%B3%A2%E5%85%B0%E8%A1%A8%E8%BE%BE%E5%BC%8F/" title="一文搞懂波兰表达式"><img src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="https://qn.ctext.top/blog-img/article/2024/04/bolan.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="一文搞懂波兰表达式"/></a><div class="content"><a class="title" href="/2024/04/%E4%B8%80%E6%96%87%E6%90%9E%E6%87%82%E6%B3%A2%E5%85%B0%E8%A1%A8%E8%BE%BE%E5%BC%8F/" title="一文搞懂波兰表达式">一文搞懂波兰表达式</a><time datetime="2024-04-05T12:49:52.000Z" title="发表于 2024-04-05 20:49:52">2024-04-05</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div id="workboard"><img class="workSituationImg boardsign" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/xiaban.svg" alt="下班了就该开开心心的玩耍，嘿嘿~" title="下班了就该开开心心的玩耍，嘿嘿~"/><div id="runtimeTextTip"></div></div></div><div id="footer-bar"><div class="footer-bar-links"><div class="footer-bar-left"><div id="footer-bar-tips"><div class="copyright">&copy;2024 By <a class="footer-bar-link" href="/" title="伴随" target="_blank">伴随</a></div></div><div id="footer-type-tips"></div><div class="js-pjax"><script>function subtitleType () {
+  getScript('https://yijuzhan.com/api/word.php?m=js').then(() => {
+    const con = str[0]
+    if (true) {
+      const from = '出自 ' + str[1]
+      const sub = []
+      sub.unshift(con, from)
+      window.typed = new Typed('#footer-type-tips', {
+        strings: sub,
+        startDelay: 300,
+        typeSpeed: 150,
+        loop: true,
+        backSpeed: 50,
+      })
+    } else {
+      document.getElementById('footer-type-tips').innerHTML = con
+    }
+  })
+}
+
+if (true) {
+  if (typeof Typed === 'function') {
+    subtitleType()
+  } else {
+    getScript('https://cdn.cbd.int/typed.js@2.1.0/dist/typed.umd.js').then(subtitleType)
+  }
+} else {
+  subtitleType()
+}
+</script></div></div><div class="footer-bar-right"><a class="footer-bar-link" target="_blank" rel="noopener" href="https://beian.miit.gov.cn/" title="京ICP备2022017849号-2">京ICP备2022017849号-2</a></div></div></div></footer></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="sidebar-site-data site-data is-center"><a href="/archives/" title="archive"><div class="headline">文章</div><div class="length-num">11</div></a><a href="/tags/" title="tag"><div class="headline">标签</div><div class="length-num">7</div></a><a href="/categories/" title="category"><div class="headline">分类</div><div class="length-num">4</div></a></div><span class="sidebar-menu-item-title">功能</span><div class="sidebar-menu-item"><a class="darkmode_switchbutton menu-child" href="javascript:void(0);" title="显示模式"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span>显示模式</span></a></div><div class="back-menu-list-groups"><div class="back-menu-list-group"><div class="back-menu-list-title">关于</div><div class="back-menu-list"><a class="back-menu-item" href="/about/" title="我"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/avatar.png" alt="我"/><span class="back-menu-item-text">我</span></a></div></div><div class="back-menu-list-group"><div class="back-menu-list-title">博客</div><div class="back-menu-list"><a class="back-menu-item" href="/album/" title="我的相册"><img class="back-menu-item-icon" src= "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onerror="this.onerror=null,this.src=&quot;/img/404.jpg&quot;" data-lazy-src="/blog-img/avatar.png" alt="我的相册"/><span class="back-menu-item-text">我的相册</span></a></div></div></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 文章</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/"><i class="anzhiyufont anzhiyu-icon-grip-vertical faa-tada" style="font-size: 0.9em;"></i><span> 主页</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/archives/"><i class="anzhiyufont anzhiyu-icon-box-archive faa-tada" style="font-size: 0.9em;"></i><span> 总览</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/categories/"><i class="anzhiyufont anzhiyu-icon-shapes faa-tada" style="font-size: 0.9em;"></i><span> 分类</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags faa-tada" style="font-size: 0.9em;"></i><span> 标签</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 我的</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/album/"><i class="anzhiyufont anzhiyu-icon-images faa-tada" style="font-size: 0.9em;"></i><span> 相册集</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/essay/"><i class="anzhiyufont anzhiyu-icon-lightbulb faa-tada" style="font-size: 0.9em;"></i><span> 记录生活</span></a></li><li><a class="site-page child faa-parent animated-hover" href="/air-conditioner/"><i class="anzhiyufont anzhiyu-icon-fan faa-tada" style="font-size: 0.9em;"></i><span> 小空调</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="javascript:void(0);"><span> 关于</span></a><ul class="menus_item_child"><li><a class="site-page child faa-parent animated-hover" href="/about/"><i class="anzhiyufont anzhiyu-icon-paper-plane faa-tada" style="font-size: 0.9em;"></i><span> 关于自己</span></a></li><li><a class="site-page child faa-parent animated-hover" href="javascript:toRandomPost()"><i class="anzhiyufont anzhiyu-icon-shoe-prints1 faa-tada" style="font-size: 0.9em;"></i><span> 随便逛逛</span></a></li></ul></div></div><span class="sidebar-menu-item-title">标签</span><div class="card-tags"><div class="item-headline"></div><div class="card-tag-cloud"><a href="/tags/Waline/" style="font-size: 0.88rem;">Waline<sup>1</sup></a><a href="/tags/hexo/" style="font-size: 0.88rem;">hexo<sup>5</sup></a><a href="/tags/%E4%BA%8C%E8%BF%9B%E5%88%B6/" style="font-size: 0.88rem;">二进制<sup>1</sup></a><a href="/tags/%E5%BE%AE%E4%BF%A1/" style="font-size: 0.88rem;">微信<sup>1</sup></a><a href="/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/" style="font-size: 0.88rem;">排序算法<sup>1</sup></a><a href="/tags/%E8%BD%AF%E4%BB%B6%E8%AE%BE%E8%AE%A1%E5%B8%88/" style="font-size: 0.88rem;">软件设计师<sup>5</sup></a><a href="/tags/%E8%BD%AF%E8%80%83/" style="font-size: 0.88rem;">软考<sup>3</sup></a></div></div><hr/></div></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="anzhiyufont anzhiyu-icon-book-open"></i></button><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="anzhiyufont anzhiyu-icon-arrows-left-right"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="anzhiyufont anzhiyu-icon-gear"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="anzhiyufont anzhiyu-icon-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直达评论"><i class="anzhiyufont anzhiyu-icon-comments"></i></a><button id="go-up" type="button" title="回到顶部"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></button></div></div><div id="nav-music"><a id="nav-music-hoverTips" onclick="anzhiyu.musicToggle()" accesskey="m">播放音乐</a><div id="console-music-bg"></div><meting-js id="8152976493" server="netease" type="playlist" mutex="true" preload="none" theme="var(--anzhiyu-main)" data-lrctype="0" order="random" volume="0.7"></meting-js></div><div id="rightMenu"><div class="rightMenu-group rightMenu-small"><div class="rightMenu-item" id="menu-backward"><i class="anzhiyufont anzhiyu-icon-arrow-left"></i></div><div class="rightMenu-item" id="menu-forward"><i class="anzhiyufont anzhiyu-icon-arrow-right"></i></div><div class="rightMenu-item" id="menu-refresh"><i class="anzhiyufont anzhiyu-icon-arrow-rotate-right" style="font-size: 1rem;"></i></div><div class="rightMenu-item" id="menu-top"><i class="anzhiyufont anzhiyu-icon-arrow-up"></i></div></div><div class="rightMenu-group rightMenu-line rightMenuPlugin"><div class="rightMenu-item" id="menu-copytext"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制选中文本</span></div><div class="rightMenu-item" id="menu-pastetext"><i class="anzhiyufont anzhiyu-icon-paste"></i><span>粘贴文本</span></div><a class="rightMenu-item" id="menu-commenttext"><i class="anzhiyufont anzhiyu-icon-comment-medical"></i><span>引用到评论</span></a><div class="rightMenu-item" id="menu-newwindow"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开</span></div><div class="rightMenu-item" id="menu-copylink"><i class="anzhiyufont anzhiyu-icon-link"></i><span>复制链接地址</span></div><div class="rightMenu-item" id="menu-copyimg"><i class="anzhiyufont anzhiyu-icon-images"></i><span>复制此图片</span></div><div class="rightMenu-item" id="menu-downloadimg"><i class="anzhiyufont anzhiyu-icon-download"></i><span>下载此图片</span></div><div class="rightMenu-item" id="menu-newwindowimg"><i class="anzhiyufont anzhiyu-icon-window-restore"></i><span>新窗口打开图片</span></div><div class="rightMenu-item" id="menu-search"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>站内搜索</span></div><div class="rightMenu-item" id="menu-searchBaidu"><i class="anzhiyufont anzhiyu-icon-magnifying-glass"></i><span>百度搜索</span></div><div class="rightMenu-item" id="menu-music-toggle"><i class="anzhiyufont anzhiyu-icon-play"></i><span>播放音乐</span></div><div class="rightMenu-item" id="menu-music-back"><i class="anzhiyufont anzhiyu-icon-backward"></i><span>切换到上一首</span></div><div class="rightMenu-item" id="menu-music-forward"><i class="anzhiyufont anzhiyu-icon-forward"></i><span>切换到下一首</span></div><div class="rightMenu-item" id="menu-music-playlist" onclick="window.open(&quot;https://y.qq.com/n/ryqq/playlist/8802438608&quot;, &quot;_blank&quot;);" style="display: none;"><i class="anzhiyufont anzhiyu-icon-radio"></i><span>查看所有歌曲</span></div><div class="rightMenu-item" id="menu-music-copyMusicName"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制歌名</span></div></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item menu-link" id="menu-randomPost"><i class="anzhiyufont anzhiyu-icon-shuffle"></i><span>随便逛逛</span></a><a class="rightMenu-item menu-link" href="/categories/"><i class="anzhiyufont anzhiyu-icon-cube"></i><span>博客分类</span></a><a class="rightMenu-item menu-link" href="/tags/"><i class="anzhiyufont anzhiyu-icon-tags"></i><span>文章标签</span></a></div><div class="rightMenu-group rightMenu-line rightMenuOther"><a class="rightMenu-item" id="menu-copy" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-copy"></i><span>复制地址</span></a><a class="rightMenu-item" id="menu-commentBarrage" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-message"></i><span class="menu-commentBarrage-text">关闭热评</span></a><a class="rightMenu-item" id="menu-darkmode" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-circle-half-stroke"></i><span class="menu-darkmode-text">深色模式</span></a><a class="rightMenu-item" id="menu-translate" href="javascript:void(0);"><i class="anzhiyufont anzhiyu-icon-language"></i><span>轉為繁體</span></a></div></div><div id="rightmenu-mask"></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><script src="https://cdn.cbd.int/@fancyapps/ui@5.0.28/dist/fancybox/fancybox.umd.js"></script><script src="https://cdn.cbd.int/instant.page@5.2.0/instantpage.js" type="module"></script><script src="https://cdn.cbd.int/vanilla-lazyload@17.8.5/dist/lazyload.iife.min.js"></script><script src="https://cdn.cbd.int/node-snackbar@0.1.16/dist/snackbar.min.js"></script><script>function panguFn () {
+  if (typeof pangu === 'object') pangu.autoSpacingPage()
+  else {
+    getScript('https://cdn.cbd.int/pangu@4.0.7/dist/browser/pangu.min.js')
+      .then(() => {
+        pangu.autoSpacingPage()
+      })
+  }
+}
+
+function panguInit () {
+  if (false){
+    GLOBAL_CONFIG_SITE.isPost && panguFn()
+  } else {
+    panguFn()
+  }
+}
+
+document.addEventListener('DOMContentLoaded', panguInit)</script><canvas id="universe"></canvas><script async src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.0/dark/dark.js"></script><script async src="/anzhiyu/random.js"></script><script async="async">(function () {
+  var grt = new Date("02/01/2024 00:00:00"); //设置网站上线时间
+  var now = new Date();
+  var dnum;
+  var hnum;
+  var mnum;
+  var snum;
+  var nowHour;
+
+  // 计算并更新天数、小时数、分钟数和秒数
+  function updateTime() {
+    now = new Date(); // 更新 now 的值
+    nowHour = now.getHours(); // 更新 nowHour 的值
+    var days = (now - grt) / 1000 / 60 / 60 / 24;
+    dnum = Math.floor(days);
+    var hours = (now - grt) / 1000 / 60 / 60 - 24 * dnum;
+    hnum = Math.floor(hours);
+    if (String(hnum).length == 1) {
+      hnum = "0" + hnum;
+    }
+    var minutes = (now - grt) / 1000 / 60 - 24 * 60 * dnum - 60 * hnum;
+    mnum = Math.floor(minutes);
+    if (String(mnum).length == 1) {
+      mnum = "0" + mnum;
+    }
+    var seconds = (now - grt) / 1000 - 24 * 60 * 60 * dnum - 60 * 60 * hnum - 60 * mnum;
+    snum = Math.round(seconds);
+    if (String(snum).length == 1) {
+      snum = "0" + snum;
+    }
+  }
+
+  // 更新网页中显示的网站运行时间
+  function updateHtml() {
+    const footer = document.getElementById("footer");
+    if (!footer) return
+    let currentTimeHtml = "";
+    if (nowHour < 18 && nowHour >= 9) {
+      // 如果是上班时间，默认就是"安知鱼-上班摸鱼中.svg"图片，不需要更改
+      currentTimeHtml = `本站居然运行了 ${dnum} 天<span id='runtime'> ${hnum} 小时 ${mnum} 分 ${snum} 秒 </span><i class='anzhiyufont anzhiyu-icon-heartbeat' style='color:red'></i>`;
+    } else {
+      // 如果是下班时间，插入"安知鱼-下班啦.svg"图片
+      let img = document.querySelector("#workboard .workSituationImg");
+      if (img != null) {
+        img.src = "/blog-img/xiaban.svg";
+        img.title = "下班了就该开开心心的玩耍，嘿嘿~";
+        img.alt = "下班了就该开开心心的玩耍，嘿嘿~";
+      }
+
+      currentTimeHtml = `本站居然运行了 ${dnum} 天<span id='runtime'> ${hnum} 小时 ${mnum} 分 ${snum} 秒 </span><i class='anzhiyufont anzhiyu-icon-heartbeat' style='color:red'></i>`;
+    }
+
+    if (document.getElementById("runtimeTextTip")) {
+      document.getElementById("runtimeTextTip").innerHTML = currentTimeHtml;
+    }
+  }
+
+  setInterval(() => {
+    updateTime();
+    updateHtml();
+  }, 1000);
+})();</script><div class="js-pjax"><script>(() => {
+
+  const locale = {
+    nick: '你的专属昵称',
+    nickError: '昵称太短啦！至少得有3个字符才能算数哦！',
+    mail: '你的电子小信箱',
+    mailError: '哎呀，这不是一个合格的邮箱地址哦，请再检查一遍！',
+    link: '你有个酷酷的网址吗？',
+    optional: '这个嘛，想填就填，不填也行！',
+    placeholder: '吐槽一下？',
+    sofa: '来，坐沙发上，发表你的评论吧！',
+    submit: '一键发送，让世界听到你的声音！',
+    like: '点个赞，让TA知道你的心意！',
+    cancelLike: '哎呀，不小心点错了，取消赞！',
+    reply: '回复TA，开启一场对话吧！',
+    cancelReply: '等等，我话还没说完，取消回复！',
+    comment: '来，说说你的看法，让评论区热闹起来！',
+    refresh: '刷新一下，看看有啥新动态！',
+    more: '哇塞，还有更多精彩内容等你来加载！',
+    preview: '先睹为快，预览一下你的大作吧！',
+    emoji: '来，加点表情，让你的评论更生动！',
+    uploadImage: '上传你的美照，让大家一起欣赏！',
+    seconds: '刚刚才发的，新鲜出炉！',
+    minutes: '几分钟前，还热乎着呢！',
+    hours: '几小时前，热度还在哦！',
+    days: '几天前，但依旧值得一看！',
+    now: '哇塞，刚刚发的，快抢沙发！',
+    uploading: '稍等片刻，你的图片正在飞奔而来！',
+    login: '登录一下，解锁更多功能！',
+    logout: '拜拜了您嘞，下次再见！',
+    admin: '博主大人在此，谁敢造次！',
+    sticky: '置顶一下，让更多人看到你的精彩内容！',
+    word: '字',
+    wordHint: '评论字数要在0到1字之间哦！\n现在你已经写了$2个字了，加油！',
+    anonymous: '神秘人出没，猜猜是谁？',
+    level0: '潜水员，深藏不露！',
+    level1: '冒泡小能手，偶尔露个头！',
+    level2: '吐槽大师，一针见血！',
+    level3: '活跃分子，无处不在！',
+    level4: '话痨达人，说个不停！',
+    level5: '传说级大神，膜拜一下！',
+    gif: '动态表情包，让你的评论更有趣！',
+    gifSearchPlaceholder: '快来搜索你喜欢的表情包，让评论更生动！',
+    profile: '看看我的个人资料，了解一下我吧！',
+    approved: '审核通过，可以展示啦！',
+    waiting: '正在等待审核，别急哦！',
+    spam: '垃圾内容，走开走开！',
+    unsticky: '换个位置看看！',
+    oldest: '看看最早的评论！',
+    latest: '看看最新的动态！',
+    hottest: '看看哪条评论最火！',
+    reactionTitle: '快来对这篇文章发表你的看法吧，让博主知道你的想法！😜'
+  };
+  const initWaline = () => {
+    const waline = Waline.init(Object.assign({
+      el: '#waline-wrap',
+      serverURL: 'https://bc.ctext.top/',
+      pageview: false,
+      dark: 'html[data-theme="dark"]',
+      path: window.location.pathname,
+      comment: false,
+      reaction: true,
+      locale
+    }, null))
+  }
+
+  const loadWaline = async () => {
+    if (typeof Waline === 'object') initWaline()
+    else {
+      await getCSS('https://cdn.cbd.int/@waline/client@2.15.5/dist/waline.css')
+      await getScript('https://cdn.cbd.int/@waline/client@2.15.5/dist/waline.js')
+      initWaline()
+    }
+  }
+
+  if ('Waline' === 'Waline' || !true) {
+    if (true) anzhiyu.loadComment(document.getElementById('waline-wrap'),loadWaline)
+    else setTimeout(loadWaline, 0)
+  } else {
+    window.loadOtherComment = loadWaline
+  }
+})()</script><input type="hidden" name="page-type" id="page-type" value="post"></div><script>window.addEventListener('load', () => {
+  const changeContent = content => {
+    if (content === '') return content
+
+    content = content.replace(/<img.*?src="(.*?)"?[^\>]+>/ig, '[图片]') // replace image link
+    content = content.replace(/<a[^>]+?href=["']?([^"']+)["']?[^>]*>([^<]+)<\/a>/gi, '[链接]') // replace url
+    content = content.replace(/<pre><code>.*?<\/pre>/gi, '[代码]') // replace code
+    content = content.replace(/<[^>]+>/g,"") // remove html tag
+
+    if (content.length > 150) {
+      content = content.substring(0,150) + '...'
+    }
+    return content
+  }
+
+  const generateHtml = array => {
+    let result = ''
+
+    if (array.length) {
+      for (let i = 0; i < array.length; i++) {
+        result += '<div class=\'aside-list-item\'>'
+
+        if (true) {
+          const name = 'data-lazy-src'
+          result += `<a href='${array[i].url}' class='thumbnail'><img ${name}='${array[i].avatar}' alt='${array[i].nick}'></a>`
+        }
+
+        result += `<div class='content'>
+        <a class='comment' href='${array[i].url}' title='${array[i].content}'>${array[i].content}</a>
+        <div class='name'><span>${array[i].nick} / </span><time datetime="${array[i].date}">${anzhiyu.diffDate(array[i].date, true)}</time></div>
+        </div></div>`
+      }
+    } else {
+      result += '没有评论'
+    }
+
+    let $dom = document.querySelector('#card-newest-comments .aside-list')
+    $dom && ($dom.innerHTML= result)
+    window.lazyLoadInstance && window.lazyLoadInstance.update()
+    window.pjax && window.pjax.refresh($dom)
+  }
+
+  const getComment = async () => {
+    try {
+      const res = await fetch('https://bc.ctext.top/api/comment?type=recent&count=6', { method: 'GET' })
+      const result = await res.json()
+      const walineArray = result.data.map(e => {
+        return {
+          'content': changeContent(e.comment),
+          'avatar': e.avatar,
+          'nick': e.nick,
+          'url': e.url + '#' + e.objectId,
+          'date': e.time || e.insertedAt
+        }
+      })
+      saveToLocal.set('waline-newest-comments', JSON.stringify(walineArray), 10/(60*24))
+      generateHtml(walineArray)
+    } catch (err) {
+      console.error(err)
+      const $dom = document.querySelector('#card-newest-comments .aside-list')
+      $dom.textContent= "无法获取评论，请确认相关配置是否正确"
+    }
+  }
+
+  const newestCommentInit = () => {
+    if (document.querySelector('#card-newest-comments .aside-list')) {
+      const data = saveToLocal.get('waline-newest-comments')
+      if (data) {
+        generateHtml(JSON.parse(data))
+      } else {
+        getComment()
+      }
+    }
+  }
+
+  newestCommentInit()
+  document.addEventListener('pjax:complete', newestCommentInit)
+})</script><script async data-pjax src="https://npm.elemecdn.com/anzhiyu-theme-static@1.0.1/bubble/bubble.js"></script><script async data-pjax src="https://cdn.cbd.int/anzhiyu-theme-static@1.0.0/waterfall/waterfall.js"></script><script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/qrcodejs/1.0.0/qrcode.min.js"></script><script src="/js/anzhiyu/right_click_menu.js"></script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.1.9/icon/ali_iconfont_css.css"><script async src="https://at.alicdn.com/t/c/font_4489064_ow7l1rcvcw.js?spm=a313x.manage_type_myprojects.i1.12.61783a81xP1PqH&amp;file=font_4489064_ow7l1rcvcw.js"></script><script async data-pjax src="/js/imgloaded.js?1"></script><script src="https://cdn.staticfile.org/jquery/3.6.3/jquery.min.js"></script><script defer="true" src="/js/welcome.js"></script><script defer="true" src="/js/hideRolling.js"></script><script defer="true" src="/js/countdown.js"></script><script defer src="https://cdn.jsdelivr.net/combine/npm/jquery@latest/dist/jquery.min.js,gh/weilining/jsdelivr/jquery/circlemagic/circlemagic.min.js,gh/weilining/jsdelivr@latest/jquery/circlemagic/butterflycirclemagic.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.cbd.int/butterfly-extsrc@1.1.3/dist/canvas-nest.min.js"></script><script id="click-heart" src="https://cdn.cbd.int/butterfly-extsrc@1.1.3/dist/click-heart.min.js" async="async" mobile="false"></script><link rel="stylesheet" href="https://cdn.cbd.int/anzhiyu-theme-static@1.0.0/aplayer/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.cbd.int/anzhiyu-blog-static@1.0.1/js/APlayer.min.js"></script><script src="https://cdn.cbd.int/hexo-anzhiyu-music@1.0.1/assets/js/Meting2.min.js"></script><script src="https://cdn.cbd.int/pjax@0.2.8/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+  // removeEventListener scroll 
+  anzhiyu.removeGlobalFnEvent('pjax')
+  anzhiyu.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><script charset="UTF-8" src="https://cdn.cbd.int/anzhiyu-theme-static@1.1.5/accesskey/accesskey.js"></script></div><div id="popup-window"><div class="popup-window-title">通知</div><div class="popup-window-divider"></div><div class="popup-window-content"><div class="popup-tip">你好呀</div><div class="popup-link"><i class="anzhiyufont anzhiyu-icon-arrow-circle-right"></i></div></div></div><!-- hexo injector body_end start --><script async src="//at.alicdn.com/t/font_2032782_8d5kxvn09md.js"></script><!-- hexo injector body_end end --></body></html>
