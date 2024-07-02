@@ -1,0 +1,3 @@
+var posts=["2024/06/4814.html","2024/02/579f.html","2024/07/3e6a.html","2024/07/9d22.html","2024/06/17dd.html","2024/06/77f2.html","2024/06/c018.html","2024/06/37ef.html","2024/05/1c94.html","2024/05/fb6a.html","2024/04/b78b.html","2024/04/ebff.html","2024/04/7104.html","2024/03/eaa2.html","2024/03/782d.html","2024/03/fe0d.html","2024/03/e7aa.html"];function toRandomPost(){
+    pjax.loadUrl('/'+posts[Math.floor(Math.random() * posts.length)]);
+  };
