@@ -1,0 +1,5 @@
+/* 隐藏滚动条样式 */
+:root {
+    --scrollbar-color: var(--scrollbar-color-thumb, rgba(0, 0, 0, 0));
+    --global-bg: var(--global-color-thumb, var(--anzhiyu-background));
+}
