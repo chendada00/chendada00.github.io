@@ -1,0 +1,14 @@
+/*@font-face {*/
+/*    font-family: 'DingTalk';*/
+/*    src: url('https://up.ctext.top/font/DingTalk%20JinBuTi.ttf') format('truetype');*/
+/*    font-weight: normal;*/
+/*    font-style: normal;*/
+/*}*/
+
+/*body {*/
+/*    font-family: 'DingTalk', sans-serif; !* sans-serif 是备用字体 *!*/
+/*}*/
+@import url('https://fastly.jsdelivr.net/npm/cn-fontsource-ding-talk-jin-bu-ti-regular/font.css');
+body, html {
+    font-family: Roboto, "DingTalk JinBuTi", sans-serif !important;
+}
